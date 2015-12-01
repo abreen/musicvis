@@ -126,7 +126,10 @@ def find_page(img):
     """
 
     # use these four corners to construct a transformation matrix
-    rows2, cols2 = 800, 1200
+
+    # for the height/width of the new image, we use a bounding box
+    rows2 = max(ll[1], lr[1]) - min(ul[1], ur[1])
+    cols2 = max(ur[0], lr[0]) - min(ul[0], ll[0])
 
     m = cv2.getPerspectiveTransform(
             numpy.array([ul, ur, ll, lr]).astype('float32'),
