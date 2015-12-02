@@ -1,19 +1,8 @@
 import numpy
 import cv2
 
+import params
 import util
-
-
-BLUR_RADIUS = 13
-CANNY_THRESHOLD_LOW = 300
-CANNY_THRESHOLD_HIGH = 400
-HOUGH_DISTANCE_RESOLUTION = 2               # pixels
-HOUGH_ANGLE_RESOLUTION = numpy.pi / 270     # radians
-HOUGH_THRESHOLD = 100
-HOUGH_MIN_LINE_LENGTH = 250                 # pixels
-HOUGH_MAX_LINE_GAP = 10                     # pixels
-ANGLE_THRESHOLD = 2 * (numpy.pi / 180)      # radians
-LINE_THICKNESS = 2                          # pixels
 
 
 def find_page(img):
@@ -23,14 +12,14 @@ def find_page(img):
     """
     rows, cols = img.shape[:2]
 
-    img2 = cv2.GaussianBlur(img, (BLUR_RADIUS, BLUR_RADIUS), 0)
+    img2 = cv2.GaussianBlur(img, (params.BLUR_RADIUS, params.BLUR_RADIUS), 0)
 
     """
     util.show('Blurred', img2)
     """
 
     # use Canny edge deduction to obtain an edge map
-    edge_map_bw = cv2.Canny(img2, CANNY_THRESHOLD_LOW, CANNY_THRESHOLD_HIGH)
+    edge_map_bw = cv2.Canny(img2, params.CANNY_THRESHOLD_LOW, params.CANNY_THRESHOLD_HIGH)
 
     """
     util.show('Edges', edge_map_bw)
@@ -39,11 +28,11 @@ def find_page(img):
     # use the probablistic Hough transform
     lines = cv2.HoughLinesP(
                 edge_map_bw,
-                HOUGH_DISTANCE_RESOLUTION,
-                HOUGH_ANGLE_RESOLUTION,
-                HOUGH_THRESHOLD,
-                minLineLength=HOUGH_MIN_LINE_LENGTH,
-                maxLineGap=HOUGH_MAX_LINE_GAP
+                params.HOUGH_DISTANCE_RESOLUTION,
+                params.HOUGH_ANGLE_RESOLUTION,
+                params.HOUGH_THRESHOLD,
+                minLineLength=params.HOUGH_MIN_LINE_LENGTH,
+                maxLineGap=params.HOUGH_MAX_LINE_GAP
     )
 
     if lines is None:
@@ -65,10 +54,11 @@ def find_page(img):
                     continue
 
                 t = _angle(a, b)
+                d = _distance(a, b)
 
                 util.debug('other line: %s (angle: %f)' % (str(b), t))
 
-                if t < ANGLE_THRESHOLD:
+                if d < params.DISTANCE_THRESHOLD and t < params.ANGLE_THRESHOLD:
                     too_similar = True
                     break
 
@@ -82,15 +72,15 @@ def find_page(img):
 
     util.debug('kept %d lines: %s' % (len(lines), str(lines)))
 
-    if len(lines) != 4:
-        return None
-
     for x1, y1, x2, y2 in lines:
-        cv2.line(edge_map_color, (x1, y1), (x2, y2), util.RED, LINE_THICKNESS)
+        cv2.line(edge_map_color, (x1, y1), (x2, y2), util.RED, params.LINE_THICKNESS)
 
     """
     util.show('Lines', edge_map_color)
     """
+
+    if len(lines) != 4:
+        return None
 
     corners = set()
     for a in lines:
@@ -174,3 +164,18 @@ def _angle(a, b):
     m2 = float(y4 - y3) / float(x4 - x3)
 
     return numpy.arctan(numpy.abs((m1 - m2) / (1 + (m1 * m2))))
+
+
+def _distance(a, b):
+    x1, y1, x2, y2 = a
+    x3, y3, x4, y4 = b
+
+    def point_distance(x1, y1, x2, y2):
+        x_diff = x2 - x1
+        y_diff = y2 - y1
+        return numpy.sqrt((x_diff * x_diff) + (y_diff * y_diff))
+
+    return min(
+            point_distance(x1, y1, x3, y3), point_distance(x2, y2, x4, y4),
+            point_distance(x1, y1, x4, y4), point_distance(x2, y2, x3, y3),
+    )
