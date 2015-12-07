@@ -7,6 +7,7 @@ import cv2
 import params
 import util
 import persp
+import notes
 
 
 def main():
@@ -30,6 +31,8 @@ def main():
         return 2
 
     util.show(filename + ' (corrected)', img2)
+
+    notes.find_staff(img2)
 
     cv2.waitKey(0)
 

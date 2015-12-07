@@ -53,8 +53,8 @@ def find_page(img):
                 if a == b:
                     continue
 
-                t = _angle(a, b)
-                d = _distance(a, b)
+                t = util.angle(a, b)
+                d = util.distance(a, b)
 
                 util.debug('other line: %s (angle: %f)' % (str(b), t))
 
@@ -88,7 +88,7 @@ def find_page(img):
             if a == b:
                 continue
 
-            i = _intersection(a, b)
+            i = util.intersection(a, b)
             if i[0] >= 0 and i[0] < cols and i[1] >= 0 and i[1] < cols:
                 corners.add(i)
 
@@ -138,44 +138,7 @@ def find_page(img):
     """
     util.show('Corrected', corrected)
     """
+    util.show('Corrected', corrected, True)
 
     return corrected
 
-
-def _intersection(a, b):
-    x1, y1, x2, y2 = a
-    x3, y3, x4, y4 = b
-
-    c = ((x1-x2) * (y3-y4)) - ((y1-y2) * (x3-x4))
-    if c == 0:
-        return (0, 0)
-
-    return (
-        ((x1*y2 - y1*x2) * (x3-x4) - (x1-x2) * (x3*y4 - y3*x4)) / c,
-        ((x1*y2 - y1*x2) * (y3-y4) - (y1-y2) * (x3*y4 - y3*x4)) / c
-    )
-
-
-def _angle(a, b):
-    x1, y1, x2, y2 = a
-    x3, y3, x4, y4 = b
-
-    m1 = float(y2 - y1) / float(x2 - x1)
-    m2 = float(y4 - y3) / float(x4 - x3)
-
-    return numpy.arctan(numpy.abs((m1 - m2) / (1 + (m1 * m2))))
-
-
-def _distance(a, b):
-    x1, y1, x2, y2 = a
-    x3, y3, x4, y4 = b
-
-    def point_distance(x1, y1, x2, y2):
-        x_diff = x2 - x1
-        y_diff = y2 - y1
-        return numpy.sqrt((x_diff * x_diff) + (y_diff * y_diff))
-
-    return min(
-            point_distance(x1, y1, x3, y3), point_distance(x2, y2, x4, y4),
-            point_distance(x1, y1, x4, y4), point_distance(x2, y2, x3, y3),
-    )
