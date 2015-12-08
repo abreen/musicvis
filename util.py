@@ -34,7 +34,6 @@ def show(title, img, save=False):
             img = cv2.resize(img, None, fx=factor, fy=factor, interpolation=SHRINK_METHOD)
 
     if save:
-        # print("saving " + title + "....")
         if not os.path.isdir("output"):
             os.mkdir("output")
 

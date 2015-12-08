@@ -32,7 +32,7 @@ def main():
 
     util.show(filename + ' (corrected)', img2)
 
-    notes.find_staff(img2)
+    staves = notes.find_staff(img2)
 
     cv2.waitKey(0)
 

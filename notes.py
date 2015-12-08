@@ -66,17 +66,32 @@ def find_staff(img):
     # Calculate y-coordinates of each staff line via weighted averaging
     staves = []
 
-    centers = []
-    numbers = []
-    # for x1, y1, x2, y2 in lines:
-    #     if y1 != y2:
-    #         util.debug("probably not what you want, check notes.py:72")
-    #     centers.append(y1)
-    #     numbers.append(x2-x1)
+    # Create a binary image containing only the detected staff lines
+    rows, cols = edge_map_bw.shape[:2]
+    temp = numpy.zeros((rows, cols, 1), numpy.uint8)
+    for x1, y1, x2, y2 in lines:
+        cv2.line(temp, (x1, y1), (x2, y2), 255, 1)   # for pretty purposes
 
-    # for center in centers:
-    #     if 
+    contour_finder = temp.copy()
+    contours, hierarchy = cv2.findContours(contour_finder, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
+    # Find the centroid of each staff line using moments
+    for contour in contours:
+        r, c, w, h = cv2.boundingRect(contour)
+        moments = cv2.moments(temp[c:c+h, r:r+w])
+
+        xbar = (moments['m10']/moments['m00'])
+        ybar = (moments['m01']/moments['m00'])
+
+        staves.append(c + ybar)
+        cv2.circle(temp, ((int) (r + xbar), (int) (c + ybar)), 1, util.RED)
+        cv2.rectangle(temp, (r, c), (r+w, c+h), 127, 1)
+
+    print("staff lines @ ", staves)
+
+    """
+    util.show('Temp', temp)
+    """
 
     edge_map_color = cv2.cvtColor(edge_map_bw, cv2.COLOR_GRAY2BGR)
     for x1, y1, x2, y2 in lines:
@@ -119,7 +134,7 @@ def find_staff(img):
     """ Show the image after staff removal
     util.show('Morphed', edge_map_bw)
     """
-    util.show('Morphed', edge_map_bw, True)
+    # util.show('Morphed', edge_map_bw, True)
 
     contour_finder = edge_map_bw.copy()
     contours, hierarchy = cv2.findContours(contour_finder, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
@@ -135,8 +150,8 @@ def find_staff(img):
 
     # error checking? merge disconnected components?
 
-    for x1, y1, w, h in musical_objects:
-        cv2.rectangle(edge_map_color, (x1, y1), (x1+w, y1+h), util.RED, 1)
+    for x, y, w, h in musical_objects:
+        cv2.rectangle(edge_map_color, (x, y), (x+w, y+h), util.RED, 1)
 
     util.debug('found %d musical objects: %s' % (len(musical_objects), str(musical_objects)))
 
@@ -144,7 +159,7 @@ def find_staff(img):
     util.show('Segmented', edge_map_color)
     """
 
-    util.show('Segmented', edge_map_color, True)
+    # util.show('Segmented', edge_map_color, True)
 
-
+    return staves
 
