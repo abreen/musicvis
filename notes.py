@@ -9,14 +9,7 @@ def find_staff(img):
     comprise a staff in a given image.
     """
 
-    # blur_radius_staff = 1
-
-    # img2 = cv2.GaussianBlur(img, (blur_radius_staff, blur_radius_staff), 0)
-
-    # # use Canny edge deduction to obtain an edge map
-    # edge_map_bw = cv2.Canny(img2, params.CANNY_THRESHOLD_LOW, params.CANNY_THRESHOLD_HIGH)
-
-    # Alternatively, convert to grayscale, invert, and threshold
+    # Convert to grayscale, invert, and threshold
     edge_map_bw = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     cv2.bitwise_not ( edge_map_bw, edge_map_bw )
     rv, edge_map_bw = cv2.threshold (edge_map_bw, 127, 255, cv2.THRESH_BINARY)
@@ -24,7 +17,8 @@ def find_staff(img):
     """
     util.show('Edges', edge_map_bw)
     """
-    # use the probablistic Hough transform
+
+    # Use the probablistic Hough transform to detect staff lines (or parts of staff lines)
     lines = cv2.HoughLinesP(
                 edge_map_bw,
                 1,                              # HOUGH_DISTANCE_RESOLUTION - it seems this is very important for detecting the thickness of staff lines
@@ -63,7 +57,8 @@ def find_staff(img):
 
     lines = [line for line in lines if valid(line)]
 
-    # Calculate y-coordinates of each staff line via weighted averaging
+
+    # Calculate y-coordinates of each staff line via weighted averaging (centroids)
     staves = []
 
     # Create a binary image containing only the detected staff lines
@@ -87,11 +82,6 @@ def find_staff(img):
         cv2.circle(temp, ((int) (r + xbar), (int) (c + ybar)), 1, util.RED)
         cv2.rectangle(temp, (r, c), (r+w, c+h), 127, 1)
 
-    print("staff lines @ ", staves)
-
-    """
-    util.show('Temp', temp)
-    """
 
     edge_map_color = cv2.cvtColor(edge_map_bw, cv2.COLOR_GRAY2BGR)
     for x1, y1, x2, y2 in lines:
@@ -100,24 +90,12 @@ def find_staff(img):
 
     util.debug('kept %d lines: %s' % (len(lines), str(lines)))
 
-
     """ Pretty picture showing staff detection
-    util.show('Staves', edge_map_color)
-    """
     util.show('Staves', edge_map_color, True)
+    """
 
-    # Working method #1:
-    # for x1, y1, x2, y2 in lines:
-    #     cv2.line(edge_map_bw, (x1, y1), (x2, y2), 0, 2)         # zero out the staff lines, restore important pixels later 
-    # kern3 = cv2.getStructuringElement(cv2.MORPH_RECT, (1,3))
-    # kern4 = cv2.getStructuringElement(cv2.MORPH_RECT, (1,4))
 
-    # edge_map_bw = cv2.dilate(edge_map_bw, kern4, iterations=1)
-    # edge_map_bw = cv2.dilate(edge_map_bw, kern3, iterations=1)
-    # edge_map_bw = cv2.erode(edge_map_bw, kern3, iterations=1)
-    # edge_map_bw = cv2.erode(edge_map_bw, kern4, iterations=1)
-
-    # This seems to work slightly better:
+    # Staff line removal: draw over binary image and perform morphological operations
     for x1, y1, x2, y2 in lines:
         cv2.line(edge_map_bw, (x1, y1), (x2, y2), 0, 1, 4)         # zero out the staff lines, restore important pixels later
 
@@ -132,34 +110,40 @@ def find_staff(img):
 
 
     """ Show the image after staff removal
-    util.show('Morphed', edge_map_bw)
+    util.show('Morphed', edge_map_bw, True)
     """
-    # util.show('Morphed', edge_map_bw, True)
+
 
     contour_finder = edge_map_bw.copy()
     contours, hierarchy = cv2.findContours(contour_finder, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-
-    # Draw the contours, just for fun - this doesn't even look as pretty as rectangles would
-    edge_map_color = cv2.cvtColor(edge_map_bw, cv2.COLOR_GRAY2BGR)
-    # cv2.drawContours(edge_map_color, contours, -1, util.RED, 1)
 
     # OK here are rectangles, they're totally prettier
     musical_objects = []
     for contour in contours:
         musical_objects.append(cv2.boundingRect(contour))
 
-    # error checking? merge disconnected components?
-
-    for x, y, w, h in musical_objects:
-        cv2.rectangle(edge_map_color, (x, y), (x+w, y+h), util.RED, 1)
-
     util.debug('found %d musical objects: %s' % (len(musical_objects), str(musical_objects)))
 
+    edge_map_color = cv2.cvtColor(edge_map_bw, cv2.COLOR_GRAY2BGR)
+    for r, c, w, h in musical_objects:
+        cv2.rectangle(edge_map_color, (r, c), (r+w, c+h), util.RED, 1)
+
+        img2 = cv2.GaussianBlur(edge_map_bw, (25, 25), 0)
+        util.show('blurrrrred', img2)
+
+        # Hough method of circle detection not so good on notes
+        circles = cv2.HoughCircles(img2[c:c+h, r:r+w], cv2.cv.CV_HOUGH_GRADIENT, 1, 10, param1=50,param2=15)
+        if circles is not None:
+            for x, y, rad in circles[0]:
+                cv2.circle(edge_map_color, ((int)(r+x), (int)(c+y)), rad, util.RED)
+
+
+
     """ Show the segmented image
-    util.show('Segmented', edge_map_color)
     """
+    util.show('Segmented', edge_map_color, True)
 
-    # util.show('Segmented', edge_map_color, True)
 
+    # error checking? merge disconnected components?
     return staves
 
