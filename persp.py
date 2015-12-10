@@ -46,7 +46,9 @@ def find_page(img):
 
     while True:
         for a in lines:
+            """
             util.debug('current line: %s' % str(a))
+            """
             too_similar = False
 
             for b in lines:
@@ -56,14 +58,18 @@ def find_page(img):
                 t = util.angle(a, b)
                 d = util.distance(a, b)
 
+                """
                 util.debug('other line: %s (angle: %f)' % (str(b), t))
+                """
 
                 if d < params.DISTANCE_THRESHOLD and t < params.ANGLE_THRESHOLD:
                     too_similar = True
                     break
 
             if too_similar:
+                """
                 util.debug('removing %s' % str(a))
+                """
                 lines.remove(a)
                 break
 
@@ -138,7 +144,6 @@ def find_page(img):
     """
     util.show('Corrected', corrected)
     """
-    util.show('Corrected', corrected, True)
 
     return corrected
 
