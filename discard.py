@@ -21,6 +21,6 @@ def filter_musical_objects(img, objs):
             for x, y, rad in circles[0]:
                 cv2.circle(img_color, ((int)(r+x), (int)(c+y)), rad, util.RED)
 
-    util.show('Circles', img_color)
+    util.show('Circles', img_color, True)
 
     return objs2

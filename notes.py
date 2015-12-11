@@ -8,6 +8,12 @@ NOTE_DURATIONS = ['quarter', 'eighth', 'half', 'whole']
 
 
 def find_notes(img, objs, staff_lines):
+    rows, cols = img.shape[:2]
+
+    temp = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
+    for c, r, w, h in objs:
+        cv2.rectangle(temp, (c, r), (c + w, r + h), 127, 1)
+
     # from 5 staff line coordinates, build coordinates of nine positions
     # (5 lines and four spaces between each line)
 
@@ -40,8 +46,6 @@ def find_notes(img, objs, staff_lines):
     objs = sorted(objs, key=lambda x: x[0])
 
     for c, r, w, h in objs:
-        print(c, r, w, h)
-
         circles = cv2.HoughCircles(
                 img2[r:r+h, c:c+w],
                 cv2.cv.CV_HOUGH_GRADIENT,
@@ -54,10 +58,13 @@ def find_notes(img, objs, staff_lines):
         if circles is not None and len(circles[0]) == 1:
             x, y, radius = circles[0][0]
 
-            dist, pos = min([( abs(r + y - p) , positions[p]) for p in positions.keys()])
+            cv2.circle(temp, (int(c + x), int(r + y)), radius, util.RED, 2)
+
+            dist, pos = min([(abs(r + y - p), positions[p]) for p in positions.keys()])
             notes.append((pos, 'quarter'))
 
             # TODO determine note duration?
 
-    # TODO sort notes by ascending x-position (for correct order)
+    util.show('Notes', temp, True)
+
     return notes
