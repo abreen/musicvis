@@ -14,10 +14,10 @@ def find_staff_lines(img):
     # convert to grayscale, invert, and threshold
     img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     cv2.bitwise_not(img_gray, img_gray)
-    rv, img_gray = cv2.threshold(img_gray, 127, 255, cv2.THRESH_BINARY)
+    rv, img_gray = cv2.threshold(img_gray, 63, 255, cv2.THRESH_BINARY)
 
     """
-    util.show('Inverted', img_gray)
+    util.show('Inverted', img_gray, save=True)
     """
 
     # use the probablistic Hough transform to detect staff lines (or parts of staff lines)
@@ -31,11 +31,11 @@ def find_staff_lines(img):
     )
 
     if lines is None:
-        util.debug('detected no lines')
+        util.debug('detected no staff lines')
         return
     else:
         lines = lines[0].tolist()
-        util.debug('detected %d lines: %s' % (len(lines), str(lines)))
+        util.debug('detected %d staff lines: %s' % (len(lines), str(lines)))
 
     rows, cols = img.shape[:2]
     axes = [(0, 0, cols, 0),
@@ -88,15 +88,13 @@ def find_staff_lines(img):
         cv2.circle(temp, (int(r + xbar), int(c + ybar)), 1, util.RED)
         cv2.rectangle(temp, (r, c), (r + w, c + h), 127, 1)
 
-    util.debug('kept %d lines: %s' % (len(lines), str(lines)))
+    util.debug('kept %d staff lines: %s' % (len(lines), str(lines)))
 
-    """
     img_color = cv2.cvtColor(img_gray, cv2.COLOR_GRAY2BGR)
     for x1, y1, x2, y2 in lines:
         cv2.line(img_color, (x1, y1), (x2, y2), util.RED, 1)   # for pretty purposes
 
-    util.show('Staff lines', img_color, True)
-    """
+    util.show('staves', img_color, True)
 
     # staff line removal: draw over binary image and perform morphological operations
     for x1, y1, x2, y2 in lines:
@@ -112,9 +110,7 @@ def find_staff_lines(img):
     img_gray = cv2.dilate(img_gray, kern4, iterations=1)
     img_gray = cv2.erode(img_gray, kern4, iterations=1)
 
-    """
-    util.show('After morphological operations', img_gray, True)
-    """
+    util.show('After morphological operations', img_gray)
 
     return img_gray, staff_lines
 

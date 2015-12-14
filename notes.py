@@ -42,6 +42,10 @@ def find_notes(img, objs, staff_lines):
     notes = []
     img2 = cv2.GaussianBlur(img, (29, 29), 0)
 
+    """
+    util.show('blurred', img2)
+    """
+
     # sort by column (ascending) to add notes left-to-right
     objs = sorted(objs, key=lambda x: x[0])
 
@@ -51,8 +55,8 @@ def find_notes(img, objs, staff_lines):
                 cv2.cv.CV_HOUGH_GRADIENT,
                 1,
                 10,
-                param1=50,
-                param2=16
+                param1=100,
+                param2=50
         )
 
         if circles is not None and len(circles[0]) == 1:

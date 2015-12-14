@@ -27,15 +27,16 @@ def main():
     img = cv2.imread(filename)
     util.show(filename, img)
 
+    filename = filename[filename.rfind("/")+1:filename.rfind(".")]
     params.load(params_path)
 
     # find page & correct for perspective
     img2 = persp.find_page(img)
-    util.show(filename + ' (corrected)', img2)
+    util.show(filename + ' (corrected)', img2, save=True)
 
     img3, staff_lines = clean.find_staff_lines(img2)
     util.debug('found %d staff lines: %s' % (len(staff_lines), str(staff_lines)))
-    util.show(filename + ' (without staff lines)', img3)
+    util.show(filename + ' (without staff lines)', img3, save=True)
 
     objs = segment.find_objects(img3)
     util.debug('found %d objects: %s' % (len(objs), str(objs)))

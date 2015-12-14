@@ -36,11 +36,11 @@ def find_page(img):
     )
 
     if lines is None:
-        util.debug('detected no lines')
+        util.debug('detected no image outlines')
         return
     else:
         lines = lines[0].tolist()
-        util.debug('detected %d lines: %s' % (len(lines), str(lines)))
+        util.debug('detected %d image outlines: %s' % (len(lines), str(lines)))
 
     edge_map_color = cv2.cvtColor(edge_map_bw, cv2.COLOR_GRAY2BGR)
 
@@ -76,7 +76,7 @@ def find_page(img):
         if not too_similar:
             break
 
-    util.debug('kept %d lines: %s' % (len(lines), str(lines)))
+    util.debug('kept %d image outlines: %s' % (len(lines), str(lines)))
 
     for x1, y1, x2, y2 in lines:
         cv2.line(edge_map_color, (x1, y1), (x2, y2), util.RED, params.LINE_THICKNESS)
@@ -126,6 +126,18 @@ def find_page(img):
     # for the height/width of the new image, we use a bounding box
     rows2 = max(ll[1], lr[1]) - min(ul[1], ur[1])
     cols2 = max(ur[0], lr[0]) - min(ul[0], ll[0])
+
+    """
+    print("source: ", numpy.array([ul, ur, ll, lr]).astype('float32'))
+    print("dest: ", numpy.array(
+                [
+                    [0, 0],
+                    [cols2 - 1, 0],
+                    [cols2 - 1, rows2 - 1],
+                    [0, rows2 - 1]
+                ]
+            ).astype('float32'))
+    """
 
     m = cv2.getPerspectiveTransform(
             numpy.array([ul, ur, ll, lr]).astype('float32'),
